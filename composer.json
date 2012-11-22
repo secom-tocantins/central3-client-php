@@ -1,0 +1,21 @@
+{
+    "name": "secom-tocantins/central3-client-php",
+    "type": "library",
+    "description": "Secom Central3 API client",
+    "license": "BSD Style",
+    "authors": [
+        {
+            "name": "Carlos André Ferrari",
+            "email": "caferrari@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2",
+        "secom-tocantins/cache": "dev-master"
+    },
+    "autoload": {
+        "psr-0": {
+            "Secom\\Central3": "library\/"
+        }
+    }
+}
