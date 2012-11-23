@@ -4,6 +4,7 @@ namespace Secom\Central3;
 
 use Secom\Cache\Cacheable,
     Secom\Central3\Client\Hydrator,
+    Secom\Central3\Client\Exception\CommunicationException,
     \RuntimeException;
 
 class Client
@@ -76,7 +77,7 @@ class Client
             return $contents;
         }
 
-        throw new RuntimeException ('Unable to load the content');
+        throw new CommunicationException('Unable to load the content');
     }
 
     public function query($acao, $pars = '', $site = null) {

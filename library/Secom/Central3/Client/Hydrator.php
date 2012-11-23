@@ -2,7 +2,8 @@
 
 namespace Secom\Central3\Client;
 
-use \RuntimeException;
+use \RuntimeException,
+    Secom\Central3\Client\Exception\ApiException;
 
 class Hydrator
 {
@@ -14,7 +15,7 @@ class Hydrator
     public function hydrate($content) {
 
         if ($content->status == 0) {
-            throw new RuntimeException($content->error_desc);
+            throw new ApiException($content->error_desc);
         }
 
         if (is_array($content->data)) {
