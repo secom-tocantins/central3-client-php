@@ -10,8 +10,11 @@
         }
     ],
     "require": {
-        "php": ">=5.3.2",
+        "php": ">=5.3.0",
         "secom-tocantins/cache": "dev-master"
+    },
+    "suggest": {
+        "ext-curl": "To access the API webserver"
     },
     "autoload": {
         "psr-0": {
