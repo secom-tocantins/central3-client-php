@@ -13,7 +13,11 @@ class Client
     protected $server = "http://central3.to.gov.br/";
     protected $site = '';
     protected $cache = null;
-    protected $cacheTimeout = 300;
+
+    protected $actionReads = array(
+        'noticia.exibir'
+    );
+
     protected $hydrator = null;
 
     public function __construct($site, Cacheable $cache = null) {
@@ -29,11 +33,8 @@ class Client
         return false;
     }
 
-    public function setToCache($key, $value, $ttl = null) {
-        if ($this->cache) {
-            if (null == $ttl) $ttl = $this->cacheTimeout;
-            return $this->cache->set($key, $value, $this->cacheTimeout);
-        }
+    public function setToCache($key, $value, $ttl = 0) {
+        return $this->cache->set($key, $value, $ttl);
     }
 
     public function fixUrl($url) {
@@ -47,37 +48,65 @@ class Client
         return md5($url);
     }
 
-    public function curlLoad($url) {
+    public function curlLoad($url, $reads=false) {
+        if ($reads) $url .= '&leituras=' . $reads;
         $ch = curl_init($url);
         curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1) ;
         curl_setopt ($ch, CURLOPT_TIMEOUT, 5) ;
         $contents = curl_exec($ch);
         if (curl_getinfo($ch, CURLINFO_HTTP_CODE) === 200) {
-            return unserialize($contents);
+            $contents = unserialize($contents);
+            $contents->tmp_leituras = 1;
+            return $contents;
+        }
+        throw new CommunicationException('Unable to load the content');
+    }
+
+    private function validateCacheReads($contents) {
+        $ttl = strtotime($contents->generated) + $contents->ttl - time();
+        return $contents->parameters['acao'] == 'noticia.exibir' && $ttl > 0;
+    }
+
+    private function getContentAction($contents) {
+        if (isset($contents->parameters['acao'])){
+            return $contents->parameters['acao'];
         }
         return false;
+    }
+
+    private function contentCountsReads($contents){
+        $action = $this->getContentAction($contents);
+        return in_array($action, $this->actionReads);
     }
 
     private function loadUrl($url) {
         $url = $this->fixUrl($url);
         $cacheKey = $this->generateCacheKey($url);
-
         $contents = $this->getFromCache($cacheKey);
+        $reads = 1;
         if (false !== $contents) {
-            return $contents;
-        }
-
-        $contents = $this->curlLoad($url);
-        if (false !== $contents) {
-            $ttl = $this->cacheTimeout;
-            if (!isset($contents->status) || !$contents->status) {
-                $ttl = 10;
+            $reads = ++$contents->tmp_leituras;
+            if ($this->validateCacheReads($contents)){
+                $this->setToCache($cacheKey, $contents);
+                return $contents;
             }
-            $this->setToCache($cacheKey, $contents, $ttl);
+        }
+
+        $contents = $this->curlLoad($url, $reads);
+
+        if (!$this->cache) {
             return $contents;
         }
 
-        throw new CommunicationException('Unable to load the content');
+        $ttl = strtotime($contents->generated) + $contents->ttl - time();
+        if (!isset($contents->status) || $contents->status == 0) {
+            $ttl = 10;
+        }elseif ($this->contentCountsReads($contents)) {
+            $ttl = 0;
+        }
+        $this->setToCache($cacheKey, $contents, $ttl);
+        return $contents;
+
     }
 
     public function query($acao, $pars = '', $site = null) {
