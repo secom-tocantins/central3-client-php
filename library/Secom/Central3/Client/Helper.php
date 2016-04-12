@@ -4,9 +4,11 @@ namespace Secom\Central3\Client;
 
 class Helper
 {
-    public static function eventosToJson($eventos, $app)
+    public static function eventosToJson($eventos)
     {
         foreach ($eventos as $evento) {
+            if (strtotime($evento->fim) > strtotime($evento->inicio))
+                $evento->fim = date('Y-m-d', strtotime("+1 days", strtotime($evento->fim)));
             $array[] = [
                 'title' => $evento->titulo,
                 'start' => $evento->inicio,
@@ -32,11 +34,11 @@ class Helper
 
     }
 
-    public static function normalizeEvento($evento, $app)
+    public static function normalizeEvento($evento)
     {
         $normalize = $evento;
         $normalize->valor = Helper::normalizeValor($evento);
-        $normalize->inicio = Helper::normalizeData($evento);
+        $normalize->data = Helper::normalizeData($evento);
         return $normalize;
     }
 
@@ -52,7 +54,9 @@ class Helper
 
     public static function normalizeData($evento)
     {
-        $data=preg_replace("@^([0-9]{4})-([0-9]{2})-([0-9]{2}) (.*)@", "$3/$2/$1", $evento->inicio);
+        $data['inicio'] = preg_replace("@^([0-9]{4})-([0-9]{2})-([0-9]{2}) (.*)@", "$3/$2/$1", $evento->inicio);
+        if (strtotime($evento->fim) > strtotime($evento->inicio))
+            $data['fim'] = preg_replace("@^([0-9]{4})-([0-9]{2})-([0-9]{2}) (.*)@", "$3/$2/$1", $evento->fim);
         return $data;
     }
 
