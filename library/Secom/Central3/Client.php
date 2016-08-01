@@ -51,6 +51,7 @@ class Client
     public function curlLoad($url, $reads=false) {
         if ($reads) $url .= '&leituras=' . $reads;
         $ch = curl_init($url);
+        curl_setopt ($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1) ;
         curl_setopt ($ch, CURLOPT_TIMEOUT, 5) ;
         $contents = curl_exec($ch);
